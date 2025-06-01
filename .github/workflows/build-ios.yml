@@ -1,30 +1,38 @@
-name: Build iOS app without signing
+name: Build iOS App (Fastlane Unsigned for AltStore)
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: macos-latest
+  build-ios:
+    runs-on: macos-13
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3  # Corrigido para a versão mais recente
 
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: 'stable'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.1'  # Versão especificada do Flutter
+          channel: stable
 
-    - name: Install dependencies
-      run: |
-        flutter pub get
+      - name: Install Flutter dependencies
+        run: flutter pub get
 
-    - name: Build iOS app without signing
-      run: |
-        fastlane build_without_signing
+      - name: Build iOS (no codesign)
+        run: flutter build ios --no-codesign
+
+      - name: Install Fastlane
+        run: sudo gem install fastlane -NV
+
+      - name: Run Fastlane Gym
+        run: cd ios && fastlane build_unsigned
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v3  # Corrigido para versão v3
+        with:
+          name: ios-unsigned-ipa
+          path: ios/build/ios/ipa/*.ipa  # Caminho correto para o IPA

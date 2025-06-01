@@ -4,10 +4,8 @@
     <key>compileBitcode</key>
     <false/>  <!-- Use <true/> se você precisar de bitcode -->
     <key>method</key>
-    <string>development</string>  <!-- Você pode deixar como "development" se não estiver publicando na App Store -->
+    <string>development</string>  <!-- Deixe como "development" se não estiver publicando na App Store -->
     <key>signingStyle</key>
     <string>manual</string>  <!-- Manual indica que você não está utilizando a assinatura automática -->
-    <key>teamID</key>
-    <string></string>  <!-- Pode deixar em branco ou remover essa linha -->
 </dict>
 </plist>

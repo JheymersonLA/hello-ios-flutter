@@ -1,38 +1,30 @@
-name: Build iOS App (Fastlane Unsigned for AltStore)
+name: Build iOS app without signing
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build-ios:
-    runs-on: macos-13
+  build:
+    runs-on: macos-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.32.1'
-          channel: stable
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: 'latest'
 
-      - name: Install Flutter dependencies
-        run: flutter pub get
+    - name: Install dependencies
+      run: |
+        flutter pub get
 
-      - name: Build iOS (no codesign)
-        run: flutter build ios --no-codesign --build-name=1.0.0 --build-number=1
-
-      - name: Install Fastlane
-        run: sudo gem install fastlane -NV
-
-      - name: Run Fastlane Gym
-        run: cd ios && fastlane build_unsigned
-
-      - name: Upload unsigned IPA
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-unsigned-ipa
-          path: ios/build/ios/ipa/*.ipa
+    - name: Build iOS app without signing
+      run: |
+        fastlane build_without_signing

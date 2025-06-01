@@ -1,0 +1,25 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build iOS app without code signing"
+  lane :build_unsigned do
+    gym(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      export_method: "development",
+      export_options: {
+        compileBitcode: false,
+        method: "development",
+        signingStyle: "manual",
+        destination: "export",
+        manageAppVersionAndBuildNumber: false,
+        stripSwiftSymbols: true
+      },
+      export_xcargs: "-allowProvisioningUpdates",
+      output_directory: "./build/ios/ipa",
+      clean: true,
+      silent: true,
+      skip_codesigning: true
+    )
+  end
+end

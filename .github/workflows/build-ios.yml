@@ -1,17 +1,16 @@
-name: Build iOS App (No Code Sign for AltStore)
+name: Build iOS App (Fastlane Unsigned for AltStore)
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   build-ios:
-    runs-on: macos-latest
+    runs-on: macos-13
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Flutter
@@ -20,32 +19,20 @@ jobs:
           flutter-version: '3.32.1'
           channel: stable
 
-      - name: Install dependencies
+      - name: Install Flutter dependencies
         run: flutter pub get
 
       - name: Build iOS (no codesign)
         run: flutter build ios --no-codesign
 
-      - name: Disable code signing in Xcode
-        run: |
-          cd ios
-          defaults write com.apple.dt.Xcode.plist IDEDisableAutomaticSigning -bool YES
+      - name: Install Fastlane
+        run: sudo gem install fastlane -NV
 
-      - name: Generate IPA using Xcode (without code signing)
-        run: |
-          cd ios
-          xcodebuild -workspace Runner.xcworkspace \
-            -scheme Runner \
-            -archivePath ../build/ios/archive/Runner.xcarchive \
-            archive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+      - name: Run Fastlane Gym
+        run: cd ios && fastlane build_unsigned
 
-          xcodebuild -exportArchive \
-            -archivePath ../build/ios/archive/Runner.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath ../build/ios/ipa
-
-      - name: Upload unsigned IPA for AltStore
+      - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:
           name: ios-unsigned-ipa
-          path: build/ios/ipa/*.ipa
+          path: ios/build/ios/ipa/*.ipa

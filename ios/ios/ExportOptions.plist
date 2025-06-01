@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
-    <dict>
-        <key>method</key>
-        <string>development</string>
-        <key>signingStyle</key>
-        <string>manual</string>
-        <key>teamID</key>
-        <string></string> <!-- Deixe vazio para não usar assinatura -->
-        <key>compileBitcode</key>
-        <string>NO</string>
-    </dict>
+<dict>
+    <key>compileBitcode</key>
+    <false/>  <!-- Use <true/> se você precisar de bitcode -->
+    <key>method</key>
+    <string>development</string>  <!-- Você pode deixar como "development" se não estiver publicando na App Store -->
+    <key>signingStyle</key>
+    <string>manual</string>  <!-- Manual indica que você não está utilizando a assinatura automática -->
+    <key>teamID</key>
+    <string></string>  <!-- Pode deixar em branco ou remover essa linha -->
+</dict>
 </plist>

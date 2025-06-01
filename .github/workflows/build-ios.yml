@@ -23,11 +23,17 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build iOS IPA (no codesign)
-        run: flutter build ipa --no-codesign
+      - name: Build iOS (no codesign)
+        run: flutter build ios --no-codesign
+
+      - name: Generate IPA using Xcode
+        run: |
+          cd ios
+          xcodebuild -workspace Runner.xcworkspace -scheme Runner -archivePath build/ios/archive/Runner.xcarchive archive
+          xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -exportOptionsPlist ios/ExportOptions.plist -exportPath build/ios/ipa
 
       - name: Upload unsigned IPA for AltStore
         uses: actions/upload-artifact@v4
         with:
           name: ios-unsigned-ipa
-          path: build/ios/archive/*.ipa  # Atualizado para o caminho correto
+          path: build/ios/ipa/*.ipa

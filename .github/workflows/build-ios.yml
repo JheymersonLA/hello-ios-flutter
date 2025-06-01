@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3  # Corrigido para a versão mais recente
+        uses: actions/checkout@v3  # Certificando-se da versão v3 para o checkout
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -32,7 +32,7 @@ jobs:
         run: cd ios && fastlane build_unsigned
 
       - name: Upload unsigned IPA
-        uses: actions/upload-artifact@v3  # Corrigido para versão v3
+        uses: actions/upload-artifact@v2  # Usando a versão v2 (v3 não é necessária aqui)
         with:
           name: ios-unsigned-ipa
           path: ios/build/ios/ipa/*.ipa  # Caminho correto para o IPA

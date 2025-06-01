@@ -26,10 +26,18 @@ jobs:
       - name: Build iOS (no codesign)
         run: flutter build ios --no-codesign
 
-      - name: Generate IPA using Xcode
+      - name: Disable code signing in Xcode
         run: |
           cd ios
-          xcodebuild -workspace Runner.xcworkspace -scheme Runner -archivePath build/ios/archive/Runner.xcarchive archive
+          # Forçar desabilitação de code signing no Xcode
+          defaults write com.apple.dt.Xcode.plist IDEDisableAutomaticSigning YES
+
+      - name: Generate IPA using Xcode (without code signing)
+        run: |
+          cd ios
+          # Realiza o build do archive sem assinatura
+          xcodebuild -workspace Runner.xcworkspace -scheme Runner -archivePath build/ios/archive/Runner.xcarchive archive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+          # Gera o .ipa sem assinatura
           xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -exportOptionsPlist ios/ExportOptions.plist -exportPath build/ios/ipa
 
       - name: Upload unsigned IPA for AltStore

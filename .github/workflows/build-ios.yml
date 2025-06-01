@@ -1,8 +1,9 @@
-name: Build iOS with Flutter
+name: Build iOS App (No Code Sign for AltStore)
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -10,27 +11,23 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout código
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Instalar Flutter
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6'  # Use sua versão atual
+          flutter-version: '3.22.0'
+          channel: stable
 
-      - name: Verificar dependências
+      - name: Install dependencies
         run: flutter pub get
 
-      - name: Configurar plataforma iOS
-        run: flutter build ios --release --no-codesign
+      - name: Build iOS IPA (no codesign)
+        run: flutter build ipa --no-codesign
 
-      - name: Zipar build iOS
-        run: |
-          cd build/ios/iphoneos
-          zip -r ios-release.zip Runner.app
-
-      - name: Salvar como artefato
+      - name: Upload unsigned IPA for AltStore
         uses: actions/upload-artifact@v4
         with:
-          name: ios-app
-          path: build/ios/iphoneos/ios-release.zip
+          name: ios-unsigned-ipa
+          path: build/ios/ipa/*.ipa

@@ -1,0 +1,36 @@
+name: Build iOS with Flutter
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.6'  # Use sua versão atual
+
+      - name: Verificar dependências
+        run: flutter pub get
+
+      - name: Configurar plataforma iOS
+        run: flutter build ios --release --no-codesign
+
+      - name: Zipar build iOS
+        run: |
+          cd build/ios/iphoneos
+          zip -r ios-release.zip Runner.app
+
+      - name: Salvar como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app
+          path: build/ios/iphoneos/ios-release.zip

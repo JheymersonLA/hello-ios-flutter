@@ -4,21 +4,22 @@ platform :ios do
   desc "Build the app without signing"
   lane :build_without_signing do
     gym(
-      workspace: "Runner.xcworkspace",
-      scheme: "Runner",
-      clean: true,
-      export_method: "ad-hoc",
-      export_options: {
-        signingStyle: "manual",
+    workspace: "Runner.xcworkspace",
+    scheme: "Runner",
+    export_method: "development",
+    export_options: {
         compileBitcode: false,
-        method: "ad-hoc",
-        provisioningProfiles: {},
-        signingCertificate: "",
-        teamID: ""
-      },
-      output_directory: "./build/ios/ipa",
-      output_name: "app_without_signing.ipa",
-      silent: true
+        method: "development",
+        signingStyle: "manual",
+        teamID: "ABCDE12345", # <-- fictício
+        manageAppVersionAndBuildNumber: false,
+        stripSwiftSymbols: true
+    },
+    export_xcargs: "-allowProvisioningUpdates",
+    output_directory: "./build/ios/ipa",
+    clean: true,
+    silent: true,
+    skip_codesigning: true
     )
   end
 end

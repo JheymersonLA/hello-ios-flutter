@@ -1,8 +1,8 @@
 default_platform(:ios)
 
 platform :ios do
-  desc "Build the app without signing"
-  lane :build_without_signing do
+  desc "Build iOS app without code signing"
+  lane :build_unsigned do
     gym(
     workspace: "Runner.xcworkspace",
     scheme: "Runner",

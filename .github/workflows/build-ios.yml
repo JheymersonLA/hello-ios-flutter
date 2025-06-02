@@ -11,28 +11,28 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3  # Certificando-se da versão v3 para o checkout
+        uses: actions/checkout@v3
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.1'  # Versão especificada do Flutter
+          flutter-version: '3.32.1'
           channel: stable
 
       - name: Install Flutter dependencies
         run: flutter pub get
 
       - name: Build iOS (no codesign)
-        run: flutter build ios --no-codesign
+        run: flutter build ios --release --no-codesign
 
       - name: Install Fastlane
         run: sudo gem install fastlane -NV
 
-      - name: Run Fastlane Gym
-        run: cd ios && fastlane build_unsigned
+      - name: Run Fastlane
+        run: cd ios && fastlane build_without_signing
 
       - name: Upload unsigned IPA
-        uses: actions/upload-artifact@v2  # Usando a versão v2 (v3 não é necessária aqui)
+        uses: actions/upload-artifact@v2
         with:
           name: ios-unsigned-ipa
-          path: ios/build/ios/ipa/*.ipa  # Caminho correto para o IPA
+          path: ios/build/ios/ipa/*.ipa

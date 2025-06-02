@@ -3,27 +3,22 @@ default_platform(:ios)
 platform :ios do
   desc "Build the app without signing"
   lane :build_without_signing do
-    # Certifique-se de que o caminho para o seu projeto está correto
-    flutter_ios_build(
-      build_config: "Release",
-      export_method: "ad-hoc",  # Este método é geralmente utilizado para distribuição
-      export_options: {
-        signingStyle: "manual", # Para que a assinatura seja ignorada
-        teamID: "your_team_id"  # Opcional, se necessário
-      }
-    )
-
-    # Comando para gerar o IPA (sem assinatura)
     gym(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      clean: true,
       export_method: "ad-hoc",
       export_options: {
-        signingStyle: "manual",  # Não usar assinatura
-        teamID: "ABCDE12345"   # Caso você precise especificar o TeamID
+        signingStyle: "manual",
+        compileBitcode: false,
+        method: "ad-hoc",
+        provisioningProfiles: {},
+        signingCertificate: "",
+        teamID: ""
       },
-      scheme: "Runner",  # Certifique-se de usar o nome correto do seu esquema
-      clean: true,
-      output_directory: "./build",
-      output_name: "app_without_signing.ipa"
+      output_directory: "./build/ios/ipa",
+      output_name: "app_without_signing.ipa",
+      silent: true
     )
   end
 end

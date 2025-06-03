@@ -1,31 +1,157 @@
-name: hello_altstore_app
-description: Um simples aplicativo Flutter "Hello World" para AltStore.
+name: Build Flutter iOS, Release, and Update AltStore Source
 
-# Prevenir publicação acidental em pub.dev.
-publish_to: 'none' # Remover esta linha se você quiser publicar em pub.dev
+on:
+  push:
+    branches:
+      - main # Ou a branch que você usa para produção
+  workflow_dispatch:
 
-version: 1.0.0+1
+jobs:
+  build_and_release_ios:
+    name: Build, Release, and Update Source
+    runs-on: macos-latest
 
-environment:
-  sdk: '>=3.0.0 <4.0.0' # Ajuste conforme a sua versão do Dart/Flutter
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Precisamos de um token com permissões de escrita para fazer o push do JSON atualizado.
+          # O GITHUB_TOKEN padrão tem essas permissões para o próprio repositório.
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-dependencies:
-  flutter:
-    sdk: flutter
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-  # Adicione outras dependências aqui, se necessário.
-  # Exemplo: cupertino_icons: ^1.0.2
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
 
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
+      - name: Get Flutter dependencies
+        run: flutter pub get
 
-  flutter_lints: ^2.0.0 # Ou a versão mais recente
+      - name: Clean Flutter build
+        run: flutter clean
 
-flutter:
-  uses-material-design: true
+      - name: Build iOS .app (no codesign)
+        run: flutter build ios --release --no-codesign
 
-  # Para adicionar assets à sua aplicação, adicione uma seção assets, como esta:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+      - name: Create unsigned IPA
+        run: |
+          cd build/ios/iphoneos/
+          mkdir Payload
+          mv Runner.app Payload/
+          zip -r ../../../app-unsigned.ipa Payload/
+          cd ../../../
+
+      - name: Prepare Release and Version Info
+        id: prep_info
+        run: |
+          PUB_VERSION=$(grep 'version:' pubspec.yaml | awk '{print $2}' | cut -d '+' -f 1)
+          BUILD_TIMESTAMP=$(date +'%Y%m%d%H%M%S')
+          VERSION_STRING="${PUB_VERSION}-build.${BUILD_TIMESTAMP}"
+          echo "VERSION_STRING=${VERSION_STRING}" >> $GITHUB_ENV
+          echo "RELEASE_TAG=v${VERSION_STRING}" >> $GITHUB_ENV
+          
+          IPA_PATH="./app-unsigned.ipa"
+          IPA_SIZE=$(stat -f %z "${IPA_PATH}")
+          echo "IPA_SIZE=${IPA_SIZE}" >> $GITHUB_ENV
+          
+          CURRENT_DATE_ISO=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "CURRENT_DATE_ISO=${CURRENT_DATE_ISO}" >> $GITHUB_ENV
+          
+          # IMPORTANTE: Defina o Bundle ID do seu app aqui. Deve corresponder ao do altstore_source.json
+          # Você pode extrair do seu pubspec.yaml ou de um arquivo de configuração se preferir.
+          APP_BUNDLE_ID="com.example.helloaltstoreapp" # <<< MUDE ISTO SE NECESSÁRIO
+          echo "APP_BUNDLE_ID=${APP_BUNDLE_ID}" >> $GITHUB_ENV
+          echo "App Bundle ID set to: ${APP_BUNDLE_ID}"
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          release_name: App Build ${{ env.VERSION_STRING }}
+          body: |
+            Automated release of unsigned IPA for AltStore.
+            Version: ${{ env.VERSION_STRING }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset (IPA)
+        id: upload_release_asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./app-unsigned.ipa
+          asset_name: app-unsigned.ipa
+          asset_content_type: application/vnd.iphone
+
+      - name: Setup jq
+        run: |
+          if ! command -v jq &> /dev/null; then
+            echo "jq not found, installing..."
+            brew install jq
+          else
+            echo "jq is already installed."
+          fi
+          
+      - name: Update AltStore Source JSON
+        env:
+          # A URL do asset de release é mais confiável via `browser_download_url` do passo de upload
+          IPA_DOWNLOAD_URL: ${{ steps.upload_release_asset.outputs.browser_download_url }}
+        run: |
+          echo "Using IPA Download URL: ${{ env.IPA_DOWNLOAD_URL }}"
+          SOURCE_FILE="altstore_source.json" # Caminho para seu arquivo JSON. Mude se não estiver na raiz.
+
+          echo "Checking if ${SOURCE_FILE} exists..."
+          if [ ! -f "${SOURCE_FILE}" ]; then
+            echo "ERRO: ${SOURCE_FILE} não encontrado! Por favor, crie-o no repositório."
+            exit 1
+          fi
+          
+          echo "Creating new version entry for JSON..."
+          NEW_VERSION_JSON_STRING=$(jq -n \
+            --arg version "${{ env.VERSION_STRING }}" \
+            --arg date "${{ env.CURRENT_DATE_ISO }}" \
+            --arg localizedDescription "Build automatizado: ${{ env.VERSION_STRING }}" \
+            --arg downloadURL "${{ env.IPA_DOWNLOAD_URL }}" \
+            --argjson size "${{ env.IPA_SIZE }}" \
+            --arg minOSVersion "14.0" \
+            '{version: $version, date: $date, localizedDescription: $localizedDescription, downloadURL: $downloadURL, size: $size, minOSVersion: $minOSVersion}')
+
+          echo "New Version JSON: ${NEW_VERSION_JSON_STRING}"
+
+          echo "Updating ${SOURCE_FILE} for app with bundle ID: ${{ env.APP_BUNDLE_ID }}"
+          # Usa `sponge` do `moreutils` para escrever no mesmo arquivo de forma segura, ou um arquivo temporário.
+          # Instalar moreutils se sponge não estiver disponível (brew install moreutils)
+          # Como alternativa, usar arquivo temporário:
+          jq \
+            --argjson newVersionEntry "$NEW_VERSION_JSON_STRING" \
+            --arg bundleId "${{ env.APP_BUNDLE_ID }}" \
+            '(.apps[] | select(.bundleIdentifier == $bundleId).versions) |= [$newVersionEntry] + .' \
+            "${SOURCE_FILE}" > tmp_altstore_source.json && mv tmp_altstore_source.json "${SOURCE_FILE}"
+          
+          echo "${SOURCE_FILE} updated."
+
+      - name: Commit and Push Updated AltStore Source
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Verifique se o arquivo foi realmente modificado
+          if ! git diff --quiet "${SOURCE_FILE}"; then
+            git add "${SOURCE_FILE}"
+            git commit -m "Automated: Update AltStore source for version ${{ env.VERSION_STRING }}"
+            git push
+            echo "Alterações em ${SOURCE_FILE} enviadas para o repositório."
+          else
+            echo "Nenhuma alteração detectada em ${SOURCE_FILE}. Nada para commitar."
+          fi

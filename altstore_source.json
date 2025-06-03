@@ -1,0 +1,30 @@
+{
+  "name": "JheymersonLA's AltStore Apps",
+  "identifier": "com.jheymersonla.altstore.helloiosflutter",
+  "sourceURL": "https://raw.githubusercontent.com/JheymersonLA/hello-ios-flutter/main/altstore_source.json",
+  "apps": [
+    {
+      "name": "Hello AltStore App",
+      "bundleIdentifier": "com.example.helloaltstoreapp",
+      "developerName": "JheymersonLA",
+      "versions": [
+      ],
+      "iconURL": "https://raw.githubusercontent.com/JheymersonLA/hello-ios-flutter/main/assets/app_icon.png",
+      "tintColor": "1E88E5", 
+      "permissions": [],
+      "screenshotURLs": [
+      ],
+      "localizedDescription": "Um simples aplicativo Flutter 'Hello World' para AltStore, construído e distribuído via GitHub Actions.",
+      "subtitle": "App de demonstração Flutter + AltStore." 
+    }
+  ],
+  "news": [
+    {
+      "title": "Fonte de Apps Criada!",
+      "identifier": "source-creation-jheymersonla-helloiosflutter",
+      "caption": "Bem-vindo à minha fonte de apps para o projeto hello-ios-flutter.",
+      "date": "2025-06-02T21:30:00-03:00", 
+      "tintColor": "1E88E5"
+    }
+  ]
+}

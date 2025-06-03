@@ -13,6 +13,8 @@ jobs:
   build_and_release_ios:
     name: Build, Release, and Update Source
     runs-on: macos-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code

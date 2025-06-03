@@ -8,15 +8,14 @@
       "bundleIdentifier": "com.example.hellolos", 
       "developerName": "JheymersonLA",
       "versions": [
-        
       ],
       "iconURL": "https://raw.githubusercontent.com/JheymersonLA/hello-ios-flutter/main/assets/app_icon.png",
       "tintColor": "1E88E5",
       "permissions": [],
       "screenshotURLs": [
       ],
-      "localizedDescription": "Um aplicativo Flutter de demonstração para AltStore.",
-      "subtitle": "Construído com Flutter e GitHub Actions."
+      "localizedDescription": "Um simples aplicativo Flutter 'Hello World' para AltStore, construído e distribuído via GitHub Actions.",
+      "subtitle": "App de demonstração Flutter + AltStore." 
     }
   ],
   "news": [
@@ -24,7 +23,7 @@
       "title": "Fonte de Apps Criada/Atualizada!",
       "identifier": "source-update-jheymersonla-helloiosflutter", 
       "caption": "Bem-vindo à minha fonte de apps para o projeto hello-ios-flutter.",
-      "date": "2025-06-02T22:20:00-03:00",
+      "date": "2025-06-02T21:30:00-03:00", 
       "tintColor": "1E88E5"
     }
   ]

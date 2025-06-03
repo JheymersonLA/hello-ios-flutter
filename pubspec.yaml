@@ -15,8 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # Precisamos de um token com permissões de escrita para fazer o push do JSON atualizado.
-          # O GITHUB_TOKEN padrão tem essas permissões para o próprio repositório.
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Java
@@ -29,6 +27,14 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+
+      - name: Validate pubspec.yaml has SDK constraint
+        run: |
+          if ! grep -q "sdk:" pubspec.yaml; then
+            echo "❌ ERRO: pubspec.yaml não contém 'environment.sdk'."
+            echo "Adicione uma linha como: environment:\n  sdk: \">=3.0.0 <4.0.0\""
+            exit 1
+          fi
 
       - name: Get Flutter dependencies
         run: flutter pub get
@@ -55,16 +61,14 @@ jobs:
           VERSION_STRING="${PUB_VERSION}-build.${BUILD_TIMESTAMP}"
           echo "VERSION_STRING=${VERSION_STRING}" >> $GITHUB_ENV
           echo "RELEASE_TAG=v${VERSION_STRING}" >> $GITHUB_ENV
-          
+
           IPA_PATH="./app-unsigned.ipa"
           IPA_SIZE=$(stat -f %z "${IPA_PATH}")
           echo "IPA_SIZE=${IPA_SIZE}" >> $GITHUB_ENV
-          
+
           CURRENT_DATE_ISO=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           echo "CURRENT_DATE_ISO=${CURRENT_DATE_ISO}" >> $GITHUB_ENV
-          
-          # IMPORTANTE: Defina o Bundle ID do seu app aqui. Deve corresponder ao do altstore_source.json
-          # Você pode extrair do seu pubspec.yaml ou de um arquivo de configuração se preferir.
+
           APP_BUNDLE_ID="com.example.helloaltstoreapp" # <<< MUDE ISTO SE NECESSÁRIO
           echo "APP_BUNDLE_ID=${APP_BUNDLE_ID}" >> $GITHUB_ENV
           echo "App Bundle ID set to: ${APP_BUNDLE_ID}"
@@ -102,21 +106,20 @@ jobs:
           else
             echo "jq is already installed."
           fi
-          
+
       - name: Update AltStore Source JSON
         env:
-          # A URL do asset de release é mais confiável via `browser_download_url` do passo de upload
           IPA_DOWNLOAD_URL: ${{ steps.upload_release_asset.outputs.browser_download_url }}
         run: |
           echo "Using IPA Download URL: ${{ env.IPA_DOWNLOAD_URL }}"
-          SOURCE_FILE="altstore_source.json" # Caminho para seu arquivo JSON. Mude se não estiver na raiz.
+          SOURCE_FILE="altstore_source.json"
 
           echo "Checking if ${SOURCE_FILE} exists..."
           if [ ! -f "${SOURCE_FILE}" ]; then
-            echo "ERRO: ${SOURCE_FILE} não encontrado! Por favor, crie-o no repositório."
+            echo "❌ ERRO: ${SOURCE_FILE} não encontrado! Crie o arquivo JSON no repositório."
             exit 1
           fi
-          
+
           echo "Creating new version entry for JSON..."
           NEW_VERSION_JSON_STRING=$(jq -n \
             --arg version "${{ env.VERSION_STRING }}" \
@@ -127,31 +130,24 @@ jobs:
             --arg minOSVersion "14.0" \
             '{version: $version, date: $date, localizedDescription: $localizedDescription, downloadURL: $downloadURL, size: $size, minOSVersion: $minOSVersion}')
 
-          echo "New Version JSON: ${NEW_VERSION_JSON_STRING}"
-
           echo "Updating ${SOURCE_FILE} for app with bundle ID: ${{ env.APP_BUNDLE_ID }}"
-          # Usa `sponge` do `moreutils` para escrever no mesmo arquivo de forma segura, ou um arquivo temporário.
-          # Instalar moreutils se sponge não estiver disponível (brew install moreutils)
-          # Como alternativa, usar arquivo temporário:
           jq \
             --argjson newVersionEntry "$NEW_VERSION_JSON_STRING" \
             --arg bundleId "${{ env.APP_BUNDLE_ID }}" \
             '(.apps[] | select(.bundleIdentifier == $bundleId).versions) |= [$newVersionEntry] + .' \
             "${SOURCE_FILE}" > tmp_altstore_source.json && mv tmp_altstore_source.json "${SOURCE_FILE}"
-          
+
           echo "${SOURCE_FILE} updated."
 
       - name: Commit and Push Updated AltStore Source
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
-          # Verifique se o arquivo foi realmente modificado
+
           if ! git diff --quiet "${SOURCE_FILE}"; then
             git add "${SOURCE_FILE}"
             git commit -m "Automated: Update AltStore source for version ${{ env.VERSION_STRING }}"
             git push
-            echo "Alterações em ${SOURCE_FILE} enviadas para o repositório."
+            echo "✅ Alterações em ${SOURCE_FILE} enviadas para o repositório."
           else
-            echo "Nenhuma alteração detectada em ${SOURCE_FILE}. Nada para commitar."
-          fi
+            echo "ℹ️ Nenhuma alteração detectada em ${SOURCE_FILE}. Nada para commitar."

@@ -169,14 +169,30 @@ jobs:
 
       - name: Commit and Push Updated AltStore Source
         run: |
+          # Defina o nome do arquivo JSON explicitamente aqui
+          _THE_SOURCE_FILE="altstore_source.json"
+
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
-          if ! git diff --quiet "${SOURCE_FILE}"; then
-            git add "${SOURCE_FILE}"
+          echo "Verificando alterações em ${_THE_SOURCE_FILE}..."
+          # Verifique se o arquivo foi realmente modificado no diretório de trabalho
+          if ! git diff --quiet "${_THE_SOURCE_FILE}"; then
+            echo "Alterações detectadas em ${_THE_SOURCE_FILE}."
+            echo "Adicionando ao stage e commitando..."
+            git add "${_THE_SOURCE_FILE}"
             git commit -m "Automated: Update AltStore source for version ${{ env.VERSION_STRING }}"
+            echo "Fazendo push das alterações..."
             git push
-            echo "✅ Alterações em ${SOURCE_FILE} enviadas para o repositório."
+            echo "✅ Alterações em ${_THE_SOURCE_FILE} enviadas para o repositório."
           else
-            echo "ℹ️ Nenhuma alteração detectada em ${SOURCE_FILE}. Nada para commitar."
+            echo "ℹ️ Nenhuma alteração de conteúdo detectada em ${_THE_SOURCE_FILE} (comparado ao que está no stage/último commit). Nada para commitar."
+            # Para depuração, verificar se o arquivo realmente existe e foi modificado pelo passo anterior
+            if [ -f "${_THE_SOURCE_FILE}" ]; then
+              echo "O arquivo ${_THE_SOURCE_FILE} existe."
+              echo "Conteúdo do git status:"
+              git status --short
+            else
+              echo "⚠️ ATENÇÃO: O arquivo ${_THE_SOURCE_FILE} não foi encontrado. O passo anterior pode ter falhado em criá-lo ou atualizá-lo."
+            fi
           fi

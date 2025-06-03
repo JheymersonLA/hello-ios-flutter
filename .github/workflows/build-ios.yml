@@ -1,6 +1,6 @@
 # Nome do arquivo: .github/workflows/build_ios.yml
 
-name: Build Flutter iOS, Release, and Update AltStore Source (Incremental Versioning)
+name: Build Flutter iOS, Release, and Update AltStore Source (Optimized with Cache)
 
 on:
   push:
@@ -30,6 +30,29 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true # Habilita o cache do SDK do Flutter (geralmente default, mas bom ser explícito)
+
+      # Cache para pacotes Pub
+      # O subosito/flutter-action exporta a variável de ambiente PUB_CACHE
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      # Cache para CocoaPods
+      # Certifique-se de que seu ios/Podfile.lock está commitado no repositório para melhor eficácia do cache.
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/Pods 
+            ~/Library/Caches/CocoaPods 
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
 
       - name: Validate pubspec.yaml and Get Flutter dependencies
         run: |
@@ -40,10 +63,6 @@ jobs:
           fi
           if ! grep -A 1 "environment:" pubspec.yaml | grep -q "sdk:"; then
             echo "❌ ERRO FATAL: A seção 'environment:' com 'sdk:' não foi encontrada ou está mal formatada no pubspec.yaml."
-            echo "Conteúdo esperado no pubspec.yaml:"
-            echo "environment:"
-            echo "  sdk: '^3.8.0' # ou versão compatível"
-            echo "Por favor, corrija o arquivo pubspec.yaml na raiz do seu projeto."
             exit 1
           fi
           echo "pubspec.yaml parece ter a estrutura básica correta."
@@ -51,7 +70,7 @@ jobs:
           flutter pub get
 
       - name: Clean Flutter build
-        run: flutter clean
+        run: flutter clean # Geralmente recomendado para builds limpos, mas pode ser avaliado se o tempo é crítico
 
       - name: Prepare Versioning Info
         id: prep_version_info
@@ -63,7 +82,7 @@ jobs:
           fi
           
           BUILD_NUMBER="${{ github.run_number }}"
-          EFFECTIVE_VERSION="${PUB_VERSION_BASE}.${BUILD_NUMBER}" # Ex: 1.0.0.15
+          EFFECTIVE_VERSION="${PUB_VERSION_BASE}.${BUILD_NUMBER}"
           
           echo "PUB_VERSION_BASE=${PUB_VERSION_BASE}" >> $GITHUB_ENV
           echo "BUILD_NUMBER=${BUILD_NUMBER}" >> $GITHUB_ENV
@@ -73,7 +92,6 @@ jobs:
           CURRENT_DATE_ISO=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           echo "CURRENT_DATE_ISO=${CURRENT_DATE_ISO}" >> $GITHUB_ENV
           
-          # Certifique-se que este é o Bundle ID real do seu IPA compilado (ex: com.example.helloIos)
           APP_BUNDLE_ID="com.example.helloIos" 
           echo "APP_BUNDLE_ID=${APP_BUNDLE_ID}" >> $GITHUB_ENV
 
@@ -85,6 +103,8 @@ jobs:
       - name: Build iOS .app (with version)
         run: |
           echo "Construindo IPA com Nome de Build: ${{ env.EFFECTIVE_VERSION }} e Número de Build: ${{ env.BUILD_NUMBER }}"
+          # O flutter build ios executa 'pod install' internamente se necessário.
+          # Se o cache de Pods estiver funcionando, esta etapa será mais rápida.
           flutter build ios --release --no-codesign \
             --build-name="${{ env.EFFECTIVE_VERSION }}" \
             --build-number="${{ env.BUILD_NUMBER }}"
@@ -138,7 +158,7 @@ jobs:
         run: |
           if ! command -v jq &> /dev/null; then
             echo "jq not found, installing..."
-            brew install jq
+            brew install jq # Esta etapa pode demorar se o jq não estiver no cache do runner ou no runner base
           else
             echo "jq is already installed."
           fi

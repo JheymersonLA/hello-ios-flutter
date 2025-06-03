@@ -67,12 +67,16 @@ jobs:
             echo "❌ ERRO: pubspec.yaml não encontrado para extrair a versão do app."
             exit 1
           fi
+          # Extrai a versão limpa (ex: 1.0.0) do pubspec.yaml
           PUB_VERSION=$(grep 'version:' pubspec.yaml | awk '{print $2}' | cut -d '+' -f 1)
           if [ -z "$PUB_VERSION" ]; then
             echo "❌ ERRO: Não foi possível extrair PUB_VERSION do pubspec.yaml."
             exit 1
           fi
+          echo "PUB_VERSION=${PUB_VERSION}" >> $GITHUB_ENV # Exporta PUB_VERSION
+
           BUILD_TIMESTAMP=$(date +'%Y%m%d%H%M%S')
+          # VERSION_STRING ainda é útil para tags de release e descrições detalhadas
           VERSION_STRING="${PUB_VERSION}-build.${BUILD_TIMESTAMP}"
           echo "VERSION_STRING=${VERSION_STRING}" >> $GITHUB_ENV
           echo "RELEASE_TAG=v${VERSION_STRING}" >> $GITHUB_ENV
@@ -88,7 +92,8 @@ jobs:
           CURRENT_DATE_ISO=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           echo "CURRENT_DATE_ISO=${CURRENT_DATE_ISO}" >> $GITHUB_ENV
           
-          APP_BUNDLE_ID="com.example.helloIos" # <<< ATUALIZADO AQUI
+          # Certifique-se que este é o Bundle ID real do seu IPA compilado
+          APP_BUNDLE_ID="com.example.helloIos" 
           echo "APP_BUNDLE_ID=${APP_BUNDLE_ID}" >> $GITHUB_ENV
           echo "App Bundle ID set to: ${APP_BUNDLE_ID}"
 
@@ -102,7 +107,8 @@ jobs:
           release_name: App Build ${{ env.VERSION_STRING }}
           body: |
             Automated release of unsigned IPA for AltStore.
-            Version: ${{ env.VERSION_STRING }}
+            Full Version: ${{ env.VERSION_STRING }}
+            App Version: ${{ env.PUB_VERSION }}
           draft: false
           prerelease: false
 
@@ -129,9 +135,10 @@ jobs:
       - name: Update AltStore Source JSON
         env:
           IPA_DOWNLOAD_URL: ${{ steps.upload_release_asset.outputs.browser_download_url }}
+          # PUB_VERSION, VERSION_STRING, CURRENT_DATE_ISO, IPA_SIZE, APP_BUNDLE_ID são herdados do GITHUB_ENV
         run: |
           echo "Using IPA Download URL: ${{ env.IPA_DOWNLOAD_URL }}"
-          _JSON_SOURCE_FILE="altstore_source.json" # Caminho para seu arquivo JSON na raiz do repo.
+          _JSON_SOURCE_FILE="altstore_source.json" 
 
           echo "Checking if ${_JSON_SOURCE_FILE} exists..."
           if [ ! -f "${_JSON_SOURCE_FILE}" ]; then
@@ -140,10 +147,12 @@ jobs:
           fi
           
           echo "Creating new version entry for JSON..."
+          # Usa PUB_VERSION para o campo 'version' no JSON para corresponder ao CFBundleShortVersionString do IPA
+          # Usa VERSION_STRING na descrição para manter a informação completa do build.
           NEW_VERSION_JSON_STRING=$(jq -n \
-            --arg version "${{ env.VERSION_STRING }}" \
+            --arg version "${{ env.PUB_VERSION }}" \
             --arg date "${{ env.CURRENT_DATE_ISO }}" \
-            --arg localizedDescription "Build automatizado: ${{ env.VERSION_STRING }}" \
+            --arg localizedDescription "Build: ${{ env.VERSION_STRING }}. Release automatizado." \
             --arg downloadURL "${{ env.IPA_DOWNLOAD_URL }}" \
             --argjson size "${{ env.IPA_SIZE }}" \
             --arg minOSVersion "14.0" \
@@ -172,7 +181,7 @@ jobs:
             echo "Alterações detectadas em ${_THE_SOURCE_FILE}."
             echo "Adicionando ao stage e commitando..."
             git add "${_THE_SOURCE_FILE}"
-            git commit -m "Automated: Update AltStore source for version ${{ env.VERSION_STRING }}"
+            git commit -m "Automated: Update AltStore source for version ${{ env.PUB_VERSION }} (Build: ${{ env.VERSION_STRING }})"
             echo "Fazendo push das alterações..."
             git push
             echo "✅ Alterações em ${_THE_SOURCE_FILE} enviadas para o repositório."

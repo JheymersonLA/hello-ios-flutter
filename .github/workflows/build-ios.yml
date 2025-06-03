@@ -1,38 +1,61 @@
-name: Build iOS App (Fastlane Unsigned for AltStore)
+name: Build Flutter iOS IPA for AltStore
 
+# Gatilhos do workflow:
+# - Em push para a branch 'main'
+# - Manualmente através da aba Actions no GitHub (workflow_dispatch)
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - master # Adicione outras branches se necessário
   workflow_dispatch:
 
 jobs:
-  build-ios:
-    runs-on: macos-13
+  build_ios:
+    name: Build Unsigned IPA
+    runs-on: macos-latest # iOS builds requerem macOS
 
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin' # Ou outra distribuição do JDK
+          java-version: '17'     # Flutter requer Java. Ajuste a versão se necessário.
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.1'
-          channel: stable
+          channel: 'stable' # Ou 'beta', 'dev', 'master' ou uma versão específica ex: '3.10.0'
+          # flutter-version: '3.x.x' # Opcional: especifique uma versão do Flutter
 
-      - name: Install Flutter dependencies
+      - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Build iOS (no codesign)
-        run: flutter build ios --no-codesign --build-name=1.0.0 --build-number=1
+      - name: Clean Flutter build
+        run: flutter clean
 
-      - name: Install Fastlane
-        run: sudo gem install fastlane -NV
+      # Constrói o .app sem codesign.
+      # O --release é para uma build de produção.
+      # O --no-codesign é crucial para evitar a etapa de assinatura.
+      - name: Build iOS .app (no codesign)
+        run: flutter build ios --release --no-codesign
 
-      - name: Run Fastlane Gym
-        run: cd ios && fastlane build_unsigned
+      # Cria o arquivo .ipa manualmente a partir do .app construído.
+      # Esta é a maneira de obter um IPA verdadeiramente não assinado.
+      - name: Create unsigned IPA
+        run: |
+          cd build/ios/iphoneos/
+          mkdir Payload
+          mv Runner.app Payload/
+          zip -r ../../../app-unsigned.ipa Payload/
+          cd ../../../ # Volta para o diretório raiz do projeto
 
-      - name: Upload unsigned IPA
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-unsigned-ipa
-          path: ios/build/ios/ipa/*.ipa
+          name: app-unsigned-ipa
+          path: app-unsigned.ipa # O nome do arquivo IPA gerado
+          if-no-files-found: error # Falha se o IPA não for encontrado

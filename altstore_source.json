@@ -4,57 +4,28 @@
   "sourceURL": "https://raw.githubusercontent.com/JheymersonLA/hello-ios-flutter/main/altstore_source.json",
   "apps": [
     {
-      "name": "Hello AltStore App",
+      "name": "Hello iOS App",
       "bundleIdentifier": "com.example.helloIos",
       "developerName": "JheymersonLA",
       "versions": [
-        {
-          "version": "1.0.0",
-          "date": "2025-06-03T01:49:12Z",
-          "localizedDescription": "Build: 1.0.0-build.20250603014912. Release automatizado.",
-          "downloadURL": "https://github.com/JheymersonLA/hello-ios-flutter/releases/download/v1.0.0-build.20250603014912/app-unsigned.ipa",
-          "size": 21916013,
-          "minOSVersion": "14.0"
-        },
-        {
-          "version": "1.0.0",
-          "date": "2025-06-03T01:41:53Z",
-          "localizedDescription": "Build: 1.0.0-build.20250603014153. Release automatizado.",
-          "downloadURL": "https://github.com/JheymersonLA/hello-ios-flutter/releases/download/v1.0.0-build.20250603014153/app-unsigned.ipa",
-          "size": 21383969,
-          "minOSVersion": "14.0"
-        },
-        {
-          "version": "1.0.0-build.20250603013257",
-          "date": "2025-06-03T01:32:57Z",
-          "localizedDescription": "Build automatizado: 1.0.0-build.20250603013257",
-          "downloadURL": "https://github.com/JheymersonLA/hello-ios-flutter/releases/download/v1.0.0-build.20250603013257/app-unsigned.ipa",
-          "size": 21383969,
-          "minOSVersion": "14.0"
-        },
-        {
-          "version": "1.0.0-build.20250603012520",
-          "date": "2025-06-03T01:25:20Z",
-          "localizedDescription": "Build automatizado: 1.0.0-build.20250603012520",
-          "downloadURL": "https://github.com/JheymersonLA/hello-ios-flutter/releases/download/v1.0.0-build.20250603012520/app-unsigned.ipa",
-          "size": 21383970,
-          "minOSVersion": "14.0"
-        }
+
       ],
       "iconURL": "https://raw.githubusercontent.com/JheymersonLA/hello-ios-flutter/main/assets/app_icon.png",
       "tintColor": "1E88E5",
       "permissions": [],
-      "screenshotURLs": [],
-      "localizedDescription": "Um simples aplicativo Flutter 'Hello World' para AltStore, construído e distribuído via GitHub Actions.",
-      "subtitle": "App de demonstração Flutter + AltStore."
+      "screenshotURLs": [
+        
+      ],
+      "localizedDescription": "Aplicativo Flutter de demonstração para AltStore com atualizações via GitHub Actions.",
+      "subtitle": "Demonstração Flutter + AltStore"
     }
   ],
   "news": [
     {
-      "title": "Fonte de Apps Criada/Atualizada!",
-      "identifier": "source-update-jheymersonla-helloiosflutter",
+      "title": "Fonte de Apps Configurada!",
+      "identifier": "source-init-jheymersonla-helloiosflutter",
       "caption": "Bem-vindo à minha fonte de apps para o projeto hello-ios-flutter.",
-      "date": "2025-06-02T21:30:00-03:00",
+      "date": "2025-06-02T23:00:00-03:00",
       "tintColor": "1E88E5"
     }
   ]

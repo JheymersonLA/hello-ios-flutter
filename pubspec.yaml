@@ -1,32 +1,33 @@
-# pubspec.yaml
+name: hello_altstore_app # Nome do seu projeto Flutter
+description: Um aplicativo Flutter de demonstração para AltStore.
 
-name: hello_altstore_app
-description: Um simples aplicativo Flutter "Hello World" para AltStore.
-
-# Impede publicação acidental no pub.dev
+# Prevenir publicação acidental em pub.dev.
 publish_to: 'none'
 
-version: 1.0.0+1
+# A versão aqui (ex: 1.0.0) será usada como base para o versionamento incremental.
+# O número após o '+' (build number) será substituído pelo github.run_number no IPA.
+version: 1.0.0+1 
 
+# Restrição do SDK do Dart - importante para o 'flutter pub get'
 environment:
-  sdk: ">=3.8.0 <4.0.0" # ✅ SDK constraint válida para evitar erros no GitHub Actions
+  sdk: ">=3.8.0 <4.0.0" # Ou a versão mais recente compatível com o Flutter Stable (ex: ^3.3.0, ^3.4.0)
 
 dependencies:
   flutter:
     sdk: flutter
 
-  # Dependência comum para ícones no iOS
-  cupertino_icons: ^1.0.2
+  # Exemplo de outra dependência, como ícones do Cupertino
+  cupertino_icons: ^1.0.6 # Use a versão mais recente
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^2.0.0 # Pode usar ^3.0.0 se quiser seguir os padrões mais recentes
+  flutter_lints: ^3.0.0 # Use a versão mais recente do lints
 
 flutter:
   uses-material-design: true
 
-  # Descomente abaixo se usar imagens ou outros assets
   # assets:
-  #   - images/
+  #   - assets/images/
+  #   - assets/app_icon.png # Se você hospedar seu ícone no projeto

@@ -9,6 +9,14 @@
       "developerName": "JheymersonLA",
       "versions": [
         {
+          "version": "1.0.0",
+          "date": "2025-06-03T01:41:53Z",
+          "localizedDescription": "Build: 1.0.0-build.20250603014153. Release automatizado.",
+          "downloadURL": "https://github.com/JheymersonLA/hello-ios-flutter/releases/download/v1.0.0-build.20250603014153/app-unsigned.ipa",
+          "size": 21383969,
+          "minOSVersion": "14.0"
+        },
+        {
           "version": "1.0.0-build.20250603013257",
           "date": "2025-06-03T01:32:57Z",
           "localizedDescription": "Build automatizado: 1.0.0-build.20250603013257",

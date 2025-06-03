@@ -1,33 +1,32 @@
-# Nome do arquivo: pubspec.yaml
-# (Localizado na raiz do seu projeto Flutter)
+# pubspec.yaml
 
-name: hello_altstore_app # Ou o nome real do seu app Flutter
+name: hello_altstore_app
 description: Um simples aplicativo Flutter "Hello World" para AltStore.
 
-# Prevenir publicação acidental em pub.dev.
+# Impede publicação acidental no pub.dev
 publish_to: 'none'
 
-version: 1.0.0+1 # A versão do seu app
+version: 1.0.0+1
 
-# ESTA É A SEÇÃO CRÍTICA PARA O ERRO QUE VOCÊ ESTAVA VENDO
 environment:
-  sdk: '^3.8.0' # <<< GARANTA QUE ESTEJA ASSIM OU SIMILAR (EX: ^3.3.0 dependendo do Flutter stable)
+  sdk: ">=3.8.0 <4.0.0" # ✅ SDK constraint válida para evitar erros no GitHub Actions
 
 dependencies:
   flutter:
     sdk: flutter
 
-  # Adicione outras dependências aqui, como cupertino_icons se estiver usando
+  # Dependência comum para ícones no iOS
   cupertino_icons: ^1.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^2.0.0 # Ou ^3.0.0 ou mais recente
+  flutter_lints: ^2.0.0 # Pode usar ^3.0.0 se quiser seguir os padrões mais recentes
 
 flutter:
   uses-material-design: true
 
+  # Descomente abaixo se usar imagens ou outros assets
   # assets:
-  #   - images/a_dot_burr.jpeg
+  #   - images/

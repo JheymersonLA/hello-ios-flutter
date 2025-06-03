@@ -8,14 +8,19 @@
       "bundleIdentifier": "com.example.helloIos",
       "developerName": "JheymersonLA",
       "versions": [
-
+        {
+          "version": "1.0.0.36",
+          "date": "2025-06-03T02:03:00Z",
+          "localizedDescription": "Build: 36. Base: 1.0.0. Release automatizado.",
+          "downloadURL": "https://github.com/JheymersonLA/hello-ios-flutter/releases/download/v1.0.0.36/app-unsigned.ipa",
+          "size": 21916017,
+          "minOSVersion": "14.0"
+        }
       ],
       "iconURL": "https://raw.githubusercontent.com/JheymersonLA/hello-ios-flutter/main/assets/app_icon.png",
       "tintColor": "1E88E5",
       "permissions": [],
-      "screenshotURLs": [
-        
-      ],
+      "screenshotURLs": [],
       "localizedDescription": "Aplicativo Flutter de demonstração para AltStore com atualizações via GitHub Actions.",
       "subtitle": "Demonstração Flutter + AltStore"
     }

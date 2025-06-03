@@ -1,5 +1,4 @@
 # Nome do arquivo: .github/workflows/build_ios.yml
-# (Ou o nome que você preferir para o seu workflow principal, ex: main.yml)
 
 name: Build Flutter iOS, Release, and Update AltStore Source
 
@@ -13,15 +12,12 @@ jobs:
   build_and_release_ios:
     name: Build, Release, and Update Source
     runs-on: macos-latest
-    permissions:
+    permissions: # Permissões necessárias para criar release
       contents: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # Precisamos de um token com permissões de escrita para fazer o push do JSON atualizado.
-          # O GITHUB_TOKEN padrão tem essas permissões para o próprio repositório.
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Java
@@ -35,7 +31,6 @@ jobs:
         with:
           channel: 'stable'
 
-      # Este passo é crucial e verifica o pubspec.yaml REAL
       - name: Validate pubspec.yaml and Get Flutter dependencies
         run: |
           echo "Verificando pubspec.yaml..."
@@ -43,14 +38,13 @@ jobs:
             echo "❌ ERRO FATAL: A seção 'environment:' com 'sdk:' não foi encontrada ou está mal formatada no pubspec.yaml REAL."
             echo "Conteúdo esperado no pubspec.yaml:"
             echo "environment:"
-            echo "  sdk: '^3.8.0' # ou versão compatível"
+            echo "  sdk: '^3.8.0' # ou versão compatível como ^3.3.0"
             echo "Por favor, corrija o arquivo pubspec.yaml na raiz do seu projeto."
             exit 1
           fi
           echo "pubspec.yaml parece ter a estrutura básica correta."
           echo "Tentando obter dependências..."
           flutter pub get
-
 
       - name: Clean Flutter build
         run: flutter clean
@@ -69,7 +63,6 @@ jobs:
       - name: Prepare Release and Version Info
         id: prep_info
         run: |
-          # Garante que o pubspec.yaml exista para pegar a versão
           if [ ! -f pubspec.yaml ]; then
             echo "❌ ERRO: pubspec.yaml não encontrado para extrair a versão do app."
             exit 1
@@ -95,7 +88,7 @@ jobs:
           CURRENT_DATE_ISO=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           echo "CURRENT_DATE_ISO=${CURRENT_DATE_ISO}" >> $GITHUB_ENV
           
-          APP_BUNDLE_ID="com.example.helloaltstoreapp" # <<< MUDE ISTO SE CORRESPONDER AO SEU APP
+          APP_BUNDLE_ID="com.example.hellolos" # <<< ATUALIZADO AQUI
           echo "APP_BUNDLE_ID=${APP_BUNDLE_ID}" >> $GITHUB_ENV
           echo "App Bundle ID set to: ${APP_BUNDLE_ID}"
 
@@ -138,11 +131,11 @@ jobs:
           IPA_DOWNLOAD_URL: ${{ steps.upload_release_asset.outputs.browser_download_url }}
         run: |
           echo "Using IPA Download URL: ${{ env.IPA_DOWNLOAD_URL }}"
-          SOURCE_FILE="altstore_source.json" # Caminho para seu arquivo JSON na raiz do repo.
+          _JSON_SOURCE_FILE="altstore_source.json" # Caminho para seu arquivo JSON na raiz do repo.
 
-          echo "Checking if ${SOURCE_FILE} exists..."
-          if [ ! -f "${SOURCE_FILE}" ]; then
-            echo "❌ ERRO: ${SOURCE_FILE} não encontrado! Crie o arquivo JSON no repositório."
+          echo "Checking if ${_JSON_SOURCE_FILE} exists..."
+          if [ ! -f "${_JSON_SOURCE_FILE}" ]; then
+            echo "❌ ERRO: ${_JSON_SOURCE_FILE} não encontrado! Crie o arquivo JSON no repositório."
             exit 1
           fi
           
@@ -158,25 +151,23 @@ jobs:
 
           echo "New Version JSON: ${NEW_VERSION_JSON_STRING}"
 
-          echo "Updating ${SOURCE_FILE} for app with bundle ID: ${{ env.APP_BUNDLE_ID }}"
+          echo "Updating ${_JSON_SOURCE_FILE} for app with bundle ID: ${{ env.APP_BUNDLE_ID }}"
           jq \
             --argjson newVersionEntry "$NEW_VERSION_JSON_STRING" \
             --arg bundleId "${{ env.APP_BUNDLE_ID }}" \
             '(.apps[] | select(.bundleIdentifier == $bundleId).versions) |= [$newVersionEntry] + .' \
-            "${SOURCE_FILE}" > tmp_altstore_source.json && mv tmp_altstore_source.json "${SOURCE_FILE}"
+            "${_JSON_SOURCE_FILE}" > tmp_altstore_source.json && mv tmp_altstore_source.json "${_JSON_SOURCE_FILE}"
           
-          echo "${SOURCE_FILE} updated."
+          echo "${_JSON_SOURCE_FILE} updated."
 
       - name: Commit and Push Updated AltStore Source
         run: |
-          # Defina o nome do arquivo JSON explicitamente aqui
           _THE_SOURCE_FILE="altstore_source.json"
 
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
           echo "Verificando alterações em ${_THE_SOURCE_FILE}..."
-          # Verifique se o arquivo foi realmente modificado no diretório de trabalho
           if ! git diff --quiet "${_THE_SOURCE_FILE}"; then
             echo "Alterações detectadas em ${_THE_SOURCE_FILE}."
             echo "Adicionando ao stage e commitando..."
@@ -186,13 +177,12 @@ jobs:
             git push
             echo "✅ Alterações em ${_THE_SOURCE_FILE} enviadas para o repositório."
           else
-            echo "ℹ️ Nenhuma alteração de conteúdo detectada em ${_THE_SOURCE_FILE} (comparado ao que está no stage/último commit). Nada para commitar."
-            # Para depuração, verificar se o arquivo realmente existe e foi modificado pelo passo anterior
+            echo "ℹ️ Nenhuma alteração de conteúdo detectada em ${_THE_SOURCE_FILE}. Nada para commitar."
             if [ -f "${_THE_SOURCE_FILE}" ]; then
               echo "O arquivo ${_THE_SOURCE_FILE} existe."
               echo "Conteúdo do git status:"
               git status --short
             else
-              echo "⚠️ ATENÇÃO: O arquivo ${_THE_SOURCE_FILE} não foi encontrado. O passo anterior pode ter falhado em criá-lo ou atualizá-lo."
+              echo "⚠️ ATENÇÃO: O arquivo ${_THE_SOURCE_FILE} não foi encontrado."
             fi
           fi

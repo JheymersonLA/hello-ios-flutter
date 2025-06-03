@@ -1,153 +1,33 @@
-name: Build Flutter iOS, Release, and Update AltStore Source
+# Nome do arquivo: pubspec.yaml
+# (Localizado na raiz do seu projeto Flutter)
 
-on:
-  push:
-    branches:
-      - main # Ou a branch que você usa para produção
-  workflow_dispatch:
+name: hello_altstore_app # Ou o nome real do seu app Flutter
+description: Um simples aplicativo Flutter "Hello World" para AltStore.
 
-jobs:
-  build_and_release_ios:
-    name: Build, Release, and Update Source
-    runs-on: macos-latest
+# Prevenir publicação acidental em pub.dev.
+publish_to: 'none'
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+version: 1.0.0+1 # A versão do seu app
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+# ESTA É A SEÇÃO CRÍTICA PARA O ERRO QUE VOCÊ ESTAVA VENDO
+environment:
+  sdk: '^3.8.0' # <<< GARANTA QUE ESTEJA ASSIM OU SIMILAR (EX: ^3.3.0 dependendo do Flutter stable)
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
+dependencies:
+  flutter:
+    sdk: flutter
 
-      - name: Validate pubspec.yaml has SDK constraint
-        run: |
-          if ! grep -q "sdk:" pubspec.yaml; then
-            echo "❌ ERRO: pubspec.yaml não contém 'environment.sdk'."
-            echo "Adicione uma linha como: environment:\n  sdk: \">=3.0.0 <4.0.0\""
-            exit 1
-          fi
+  # Adicione outras dependências aqui, como cupertino_icons se estiver usando
+  cupertino_icons: ^1.0.2
 
-      - name: Get Flutter dependencies
-        run: flutter pub get
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
 
-      - name: Clean Flutter build
-        run: flutter clean
+  flutter_lints: ^2.0.0 # Ou ^3.0.0 ou mais recente
 
-      - name: Build iOS .app (no codesign)
-        run: flutter build ios --release --no-codesign
+flutter:
+  uses-material-design: true
 
-      - name: Create unsigned IPA
-        run: |
-          cd build/ios/iphoneos/
-          mkdir Payload
-          mv Runner.app Payload/
-          zip -r ../../../app-unsigned.ipa Payload/
-          cd ../../../
-
-      - name: Prepare Release and Version Info
-        id: prep_info
-        run: |
-          PUB_VERSION=$(grep 'version:' pubspec.yaml | awk '{print $2}' | cut -d '+' -f 1)
-          BUILD_TIMESTAMP=$(date +'%Y%m%d%H%M%S')
-          VERSION_STRING="${PUB_VERSION}-build.${BUILD_TIMESTAMP}"
-          echo "VERSION_STRING=${VERSION_STRING}" >> $GITHUB_ENV
-          echo "RELEASE_TAG=v${VERSION_STRING}" >> $GITHUB_ENV
-
-          IPA_PATH="./app-unsigned.ipa"
-          IPA_SIZE=$(stat -f %z "${IPA_PATH}")
-          echo "IPA_SIZE=${IPA_SIZE}" >> $GITHUB_ENV
-
-          CURRENT_DATE_ISO=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-          echo "CURRENT_DATE_ISO=${CURRENT_DATE_ISO}" >> $GITHUB_ENV
-
-          APP_BUNDLE_ID="com.example.helloaltstoreapp" # <<< MUDE ISTO SE NECESSÁRIO
-          echo "APP_BUNDLE_ID=${APP_BUNDLE_ID}" >> $GITHUB_ENV
-          echo "App Bundle ID set to: ${APP_BUNDLE_ID}"
-
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          release_name: App Build ${{ env.VERSION_STRING }}
-          body: |
-            Automated release of unsigned IPA for AltStore.
-            Version: ${{ env.VERSION_STRING }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset (IPA)
-        id: upload_release_asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./app-unsigned.ipa
-          asset_name: app-unsigned.ipa
-          asset_content_type: application/vnd.iphone
-
-      - name: Setup jq
-        run: |
-          if ! command -v jq &> /dev/null; then
-            echo "jq not found, installing..."
-            brew install jq
-          else
-            echo "jq is already installed."
-          fi
-
-      - name: Update AltStore Source JSON
-        env:
-          IPA_DOWNLOAD_URL: ${{ steps.upload_release_asset.outputs.browser_download_url }}
-        run: |
-          echo "Using IPA Download URL: ${{ env.IPA_DOWNLOAD_URL }}"
-          SOURCE_FILE="altstore_source.json"
-
-          echo "Checking if ${SOURCE_FILE} exists..."
-          if [ ! -f "${SOURCE_FILE}" ]; then
-            echo "❌ ERRO: ${SOURCE_FILE} não encontrado! Crie o arquivo JSON no repositório."
-            exit 1
-          fi
-
-          echo "Creating new version entry for JSON..."
-          NEW_VERSION_JSON_STRING=$(jq -n \
-            --arg version "${{ env.VERSION_STRING }}" \
-            --arg date "${{ env.CURRENT_DATE_ISO }}" \
-            --arg localizedDescription "Build automatizado: ${{ env.VERSION_STRING }}" \
-            --arg downloadURL "${{ env.IPA_DOWNLOAD_URL }}" \
-            --argjson size "${{ env.IPA_SIZE }}" \
-            --arg minOSVersion "14.0" \
-            '{version: $version, date: $date, localizedDescription: $localizedDescription, downloadURL: $downloadURL, size: $size, minOSVersion: $minOSVersion}')
-
-          echo "Updating ${SOURCE_FILE} for app with bundle ID: ${{ env.APP_BUNDLE_ID }}"
-          jq \
-            --argjson newVersionEntry "$NEW_VERSION_JSON_STRING" \
-            --arg bundleId "${{ env.APP_BUNDLE_ID }}" \
-            '(.apps[] | select(.bundleIdentifier == $bundleId).versions) |= [$newVersionEntry] + .' \
-            "${SOURCE_FILE}" > tmp_altstore_source.json && mv tmp_altstore_source.json "${SOURCE_FILE}"
-
-          echo "${SOURCE_FILE} updated."
-
-      - name: Commit and Push Updated AltStore Source
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
-          if ! git diff --quiet "${SOURCE_FILE}"; then
-            git add "${SOURCE_FILE}"
-            git commit -m "Automated: Update AltStore source for version ${{ env.VERSION_STRING }}"
-            git push
-            echo "✅ Alterações em ${SOURCE_FILE} enviadas para o repositório."
-          else
-            echo "ℹ️ Nenhuma alteração detectada em ${SOURCE_FILE}. Nada para commitar."
+  # assets:
+  #   - images/a_dot_burr.jpeg

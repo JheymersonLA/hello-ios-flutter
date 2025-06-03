@@ -88,7 +88,7 @@ jobs:
           CURRENT_DATE_ISO=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           echo "CURRENT_DATE_ISO=${CURRENT_DATE_ISO}" >> $GITHUB_ENV
           
-          APP_BUNDLE_ID="com.example.hellolos" # <<< ATUALIZADO AQUI
+          APP_BUNDLE_ID="com.example.helloIos" # <<< ATUALIZADO AQUI
           echo "APP_BUNDLE_ID=${APP_BUNDLE_ID}" >> $GITHUB_ENV
           echo "App Bundle ID set to: ${APP_BUNDLE_ID}"
 

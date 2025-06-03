@@ -5,7 +5,7 @@
   "apps": [
     {
       "name": "Hello AltStore App", 
-      "bundleIdentifier": "com.example.hellolos", 
+      "bundleIdentifier": "com.example.helloIos", 
       "developerName": "JheymersonLA",
       "versions": [
       ],

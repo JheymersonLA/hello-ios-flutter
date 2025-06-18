@@ -4,7 +4,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirebaseService {
   static Future<void> initialize() async {
-    await Firebase.initializeApp();
+    if (identical(0, 0.0)) { // kIsWeb não está importado, então uso workaround
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: 'AIzaSyB3FYrA1nKu7ytvRRq7BRhwBVLYPIvLXZg',
+          appId: '1:1051714663308:ios:65108fcda0ce5bf8b51ca9',
+          messagingSenderId: '1051714663308',
+          projectId: 'horoscope-6225b',
+          storageBucket: 'horoscope-6225b.firebasestorage.app',
+        ),
+      );
+    } else {
+      await Firebase.initializeApp();
+    }
   }
 
   static Future<UserCredential> signInWithEmail(String email, String password) async {

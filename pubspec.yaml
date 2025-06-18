@@ -18,6 +18,11 @@ dependencies:
 
   # Exemplo de outra dependência, como ícones do Cupertino
   cupertino_icons: ^1.0.6 # Use a versão mais recente
+  firebase_core: ^2.30.0
+  firebase_auth: ^4.17.8
+  cloud_firestore: ^4.15.8
+  http: ^1.2.1
+  animations: ^2.0.11
 
 dev_dependencies:
   flutter_test:
